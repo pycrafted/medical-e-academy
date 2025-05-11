@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import DicomViewer from './DicomViewer';
+import DicomUpload from './DicomUpload';
 
 function DoctorDashboard() {
   const [patients, setPatients] = useState([]);
@@ -8,7 +8,6 @@ function DoctorDashboard() {
   const [prescriptions, setPrescriptions] = useState([]);
   const [form, setForm] = useState({ medication: '', dosage: '', instructions: '' });
   const [error, setError] = useState('');
-  const user = JSON.parse(localStorage.getItem('user'));
 
   useEffect(() => {
     const fetchPatients = async () => {
@@ -26,12 +25,13 @@ function DoctorDashboard() {
 
   const handleSelectPatient = async (patientId) => {
     try {
+      const token = localStorage.getItem('token');
       const [patientRes, prescriptionsRes] = await Promise.all([
         axios.get(`http://localhost:5000/api/patients/${patientId}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          headers: { Authorization: `Bearer ${token}` },
         }),
         axios.get(`http://localhost:5000/api/prescriptions/${patientId}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
       setSelectedPatient(patientRes.data);
@@ -85,7 +85,7 @@ function DoctorDashboard() {
             <p>Email : {selectedPatient.email}</p>
             <p>Date de naissance : {new Date(selectedPatient.date_of_birth).toLocaleDateString()}</p>
             <p>Genre : {selectedPatient.gender}</p>
-            <DicomViewer studyId={selectedPatient.study_id} /> {/* À adapter si study_id est disponible */}
+            <DicomUpload patientId={selectedPatient.id} onUploadSuccess={() => {}} />
           </div>
           <div className="card">
             <h3>Prescriptions</h3>

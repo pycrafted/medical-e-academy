@@ -6,6 +6,7 @@ function PatientDashboard() {
   const [patient, setPatient] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [prescriptions, setPrescriptions] = useState([]);
+  const [dicomStudies, setDicomStudies] = useState([]);
   const [error, setError] = useState('');
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -19,20 +20,25 @@ function PatientDashboard() {
     if (!user.is_default_password) {
       const fetchData = async () => {
         try {
-          const [patientRes, appointmentsRes, prescriptionsRes] = await Promise.all([
+          const token = localStorage.getItem('token');
+          const [patientRes, appointmentsRes, prescriptionsRes, dicomRes] = await Promise.all([
             axios.get(`http://localhost:5000/api/patients/${user.id}`, {
-              headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+              headers: { Authorization: `Bearer ${token}` },
             }),
             axios.get('http://localhost:5000/api/appointments', {
-              headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+              headers: { Authorization: `Bearer ${token}` },
             }),
             axios.get(`http://localhost:5000/api/prescriptions/${user.id}`, {
-              headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+              headers: { Authorization: `Bearer ${token}` },
+            }),
+            axios.get(`http://localhost:5000/api/dicom/patient/${user.id}`, {
+              headers: { Authorization: `Bearer ${token}` },
             }),
           ]);
           setPatient(patientRes.data);
           setAppointments(appointmentsRes.data);
           setPrescriptions(prescriptionsRes.data);
+          setDicomStudies(dicomRes.data);
         } catch (err) {
           setError(err.response?.data?.message || 'Erreur lors du chargement des données');
         }
@@ -57,23 +63,16 @@ function PatientDashboard() {
 
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        setPasswordError('Session expirée. Veuillez vous reconnecter.');
-        return;
-      }
-
       await axios.post(
         'http://localhost:5000/api/auth/change-password',
         { currentPassword, newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert('Mot de passe changé avec succès');
-      // Mettre à jour l'utilisateur dans localStorage
       const updatedUser = { ...user, is_default_password: false };
       localStorage.setItem('user', JSON.stringify(updatedUser));
       setPasswordForm({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
       setPasswordError('');
-      // Recharger la page pour charger les données
       window.location.reload();
     } catch (err) {
       setPasswordError(err.response?.data?.message || 'Erreur lors du changement de mot de passe');
@@ -138,6 +137,21 @@ function PatientDashboard() {
           <p>Email : {patient.email}</p>
           <p>Date de naissance : {new Date(patient.date_of_birth).toLocaleDateString()}</p>
           <p>Genre : {patient.gender}</p>
+          <h4>Mes images DICOM</h4>
+          {dicomStudies.length === 0 ? (
+            <p>Aucune image DICOM disponible.</p>
+          ) : (
+            <ul>
+              {dicomStudies.map((studyId) => (
+                <li key={studyId}>
+                  Étude ID: {studyId}{' '}
+                  <button onClick={() => window.open(`http://localhost:8042/ohif/viewer?StudyInstanceUIDs=${studyId}`, '_blank')}>
+                    Visualiser
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
       <div className="card">

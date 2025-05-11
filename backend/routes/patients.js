@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
-const { verifyAssistant, verifyDoctor, verifyPatient } = require('../middleware/auth');
+const { verifyAssistant, verifyDoctor, verifyPatient, verifyToken } = require('../middleware/auth');
 
 // Créer un dossier patient (accessible uniquement aux assistants)
 router.post('/', verifyAssistant, (req, res) => {
@@ -65,7 +65,7 @@ router.post('/', verifyAssistant, (req, res) => {
 });
 
 // Consulter un dossier patient (accessible au patient ou au médecin assigné)
-router.get('/:id', (req, res) => {
+router.get('/:id', verifyToken, (req, res) => {
   const patientId = req.params.id;
   const user = req.user; // Via middleware verifyToken
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-function DicomUpload({ onUploadSuccess }) {
+function DicomUpload({ patientId, onUploadSuccess }) {
   const [files, setFiles] = useState([]);
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -20,6 +20,7 @@ function DicomUpload({ onUploadSuccess }) {
 
     setUploading(true);
     const formData = new FormData();
+    formData.append('patient_id', patientId);
     files.forEach((file) => {
       formData.append('dicomFiles', file);
     });
@@ -36,7 +37,7 @@ function DicomUpload({ onUploadSuccess }) {
       setFiles([]);
       setError('');
       if (onUploadSuccess) {
-        onUploadSuccess(); // Appeler la fonction pour rafraîchir la liste des études
+        onUploadSuccess();
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Erreur lors de l’upload des fichiers');
@@ -47,7 +48,7 @@ function DicomUpload({ onUploadSuccess }) {
 
   return (
     <div className="dicom-upload">
-      <h3>Uploader des fichiers DICOM</h3>
+      <h3>Uploader des fichiers DICOM pour le patient</h3>
       {error && <p className="error">{error}</p>}
       <form onSubmit={handleSubmit}>
         <div>

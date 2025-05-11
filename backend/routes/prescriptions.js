@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
-const { verifyDoctor } = require('../middleware/auth');
+const { verifyDoctor, verifyToken } = require('../middleware/auth');
 
 // Créer une prescription (médecins uniquement)
 router.post('/', verifyDoctor, (req, res) => {
@@ -24,7 +24,7 @@ router.post('/', verifyDoctor, (req, res) => {
 });
 
 // Consulter les prescriptions
-router.get('/:patient_id', (req, res) => {
+router.get('/:patient_id', verifyToken, (req, res) => {
   const patientId = req.params.patient_id;
   const user = req.user;
 
