@@ -1,190 +1,225 @@
+// frontend/src/components/PatientDashboard.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import AppointmentForm from './AppointmentForm';
+import { useNavigate } from 'react-router-dom';
+import './PatientDashboard.css';
 
-function PatientDashboard() {
-  const [patient, setPatient] = useState(null);
-  const [appointments, setAppointments] = useState([]);
-  const [prescriptions, setPrescriptions] = useState([]);
-  const [dicomStudies, setDicomStudies] = useState([]);
+const PatientDashboard = () => {
+  const [medicalRecord, setMedicalRecord] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmNewPassword: '',
-  });
-  const [passwordError, setPasswordError] = useState('');
   const user = JSON.parse(localStorage.getItem('user'));
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user.is_default_password) {
-      const fetchData = async () => {
-        try {
-          const token = localStorage.getItem('token');
-          const [patientRes, appointmentsRes, prescriptionsRes, dicomRes] = await Promise.all([
-            axios.get(`http://localhost:5000/api/patients/${user.id}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
-            axios.get('http://localhost:5000/api/appointments', {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
-            axios.get(`http://localhost:5000/api/prescriptions/${user.id}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
-            axios.get(`http://localhost:5000/api/dicom/patient/${user.id}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
-          ]);
-          setPatient(patientRes.data);
-          setAppointments(appointmentsRes.data);
-          setPrescriptions(prescriptionsRes.data);
-          setDicomStudies(dicomRes.data);
-        } catch (err) {
-          setError(err.response?.data?.message || 'Erreur lors du chargement des données');
-        }
-      };
-      fetchData();
-    }
-  }, [user.id, user.is_default_password]);
-
-  const handlePasswordChange = async (e) => {
-    e.preventDefault();
-    const { currentPassword, newPassword, confirmNewPassword } = passwordForm;
-
-    if (newPassword !== confirmNewPassword) {
-      setPasswordError('Les nouveaux mots de passe ne correspondent pas');
+    if (user?.is_default_password) {
       return;
     }
 
-    if (newPassword.length < 8) {
-      setPasswordError('Le nouveau mot de passe doit contenir au moins 8 caractères');
-      return;
-    }
+    const fetchMedicalRecord = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(
+          `http://localhost:5000/api/patients/${user.id}/medical-record`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setMedicalRecord(response.data);
+      } catch (err) {
+        setError(err.response?.data?.message || 'Erreur lors du chargement du dossier médical');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        'http://localhost:5000/api/auth/change-password',
-        { currentPassword, newPassword },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      alert('Mot de passe changé avec succès');
-      const updatedUser = { ...user, is_default_password: false };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      setPasswordForm({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
-      setPasswordError('');
-      window.location.reload();
-    } catch (err) {
-      setPasswordError(err.response?.data?.message || 'Erreur lors du changement de mot de passe');
-    }
+    fetchMedicalRecord();
+  }, [user]);
+
+  const handleViewDicom = (studyId) => {
+    window.open(`http://localhost:8042/ohif/viewer?StudyInstanceUIDs=${studyId}`, '_blank');
   };
 
-  const handlePasswordInputChange = (e) => {
-    setPasswordForm({ ...passwordForm, [e.target.name]: e.target.value });
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('fr-FR');
   };
 
-  if (user.is_default_password) {
-    return (
-      <div className="patient-dashboard">
-        <h2>Changer votre mot de passe</h2>
-        <p>Pour des raisons de sécurité, vous devez changer votre mot de passe par défaut avant de continuer.</p>
-        {passwordError && <p className="error">{passwordError}</p>}
-        <form onSubmit={handlePasswordChange} className="change-password-form">
-          <div>
-            <label>Mot de passe actuel :</label>
-            <input
-              type="password"
-              name="currentPassword"
-              value={passwordForm.currentPassword}
-              onChange={handlePasswordInputChange}
-              required
-            />
-          </div>
-          <div>
-            <label>Nouveau mot de passe :</label>
-            <input
-              type="password"
-              name="newPassword"
-              value={passwordForm.newPassword}
-              onChange={handlePasswordInputChange}
-              required
-            />
-          </div>
-          <div>
-            <label>Confirmer le nouveau mot de passe :</label>
-            <input
-              type="password"
-              name="confirmNewPassword"
-              value={passwordForm.confirmNewPassword}
-              onChange={handlePasswordInputChange}
-              required
-            />
-          </div>
-          <button type="submit">Changer le mot de passe</button>
-        </form>
-      </div>
-    );
+  const formatDateTime = (dateString) => {
+    return new Date(dateString).toLocaleString('fr-FR');
+  };
+
+  // Dans le cas où is_default_password est true
+if (user?.is_default_password) {
+  return (
+    <div className="password-change-required">
+      <h2>Changement de mot de passe requis</h2>
+      <p>Pour des raisons de sécurité, veuillez changer votre mot de passe par défaut.</p>
+      <button
+        onClick={() => navigate('/change-password')}
+        className="change-password-button"
+      >
+        Changer mon mot de passe
+      </button>
+    </div>
+  );
+}
+
+  if (loading) {
+    return <div className="loading">Chargement de votre dossier médical...</div>;
+  }
+
+  if (error) {
+    return <div className="error-message">{error}</div>;
   }
 
   return (
     <div className="patient-dashboard">
-      <h2>Mon espace patient</h2>
-      {error && <p className="error">{error}</p>}
-      {patient && (
-        <div className="card">
-          <h3>Mon dossier médical</h3>
-          <p>Nom : {patient.name}</p>
-          <p>Email : {patient.email}</p>
-          <p>Date de naissance : {new Date(patient.date_of_birth).toLocaleDateString()}</p>
-          <p>Genre : {patient.gender}</p>
-          <h4>Mes images DICOM</h4>
-          {dicomStudies.length === 0 ? (
-            <p>Aucune image DICOM disponible.</p>
-          ) : (
-            <ul>
-              {dicomStudies.map((studyId) => (
-                <li key={studyId}>
-                  Étude ID: {studyId}{' '}
-                  <button onClick={() => window.open(`http://localhost:8042/ohif/viewer?StudyInstanceUIDs=${studyId}`, '_blank')}>
-                    Visualiser
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+      <h1>Mon Dossier Médical</h1>
+
+      {medicalRecord && (
+        <>
+          {/* Section Informations Personnelles */}
+          <section className="personal-info">
+            <h2>Informations Personnelles</h2>
+            <div className="info-grid">
+              <div>
+                <label>Nom Complet:</label>
+                <p>{medicalRecord.patientInfo.name}</p>
+              </div>
+              <div>
+                <label>Date de Naissance:</label>
+                <p>{formatDate(medicalRecord.patientInfo.date_of_birth)}</p>
+              </div>
+              <div>
+                <label>Genre:</label>
+                <p>{medicalRecord.patientInfo.gender === 'M' ? 'Masculin' : 'Féminin'}</p>
+              </div>
+              <div>
+                <label>Groupe Sanguin:</label>
+                <p>{medicalRecord.patientInfo.blood_type || 'Non spécifié'}</p>
+              </div>
+              <div>
+                <label>Médecin Traitant:</label>
+                <p>{medicalRecord.patientInfo.doctor.name}</p>
+              </div>
+            </div>
+          </section>
+
+          {/* Section Allergies */}
+          <section className="allergies-section">
+            <h2>Allergies</h2>
+            {medicalRecord.medicalData.allergies.length > 0 ? (
+              <table>
+                <thead>
+                  <tr>
+                    <th>Allergie</th>
+                    <th>Sévérité</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {medicalRecord.medicalData.allergies.map((allergy, index) => (
+                    <tr key={index}>
+                      <td>{allergy.allergy_name}</td>
+                      <td>{allergy.severity}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>Aucune allergie enregistrée.</p>
+            )}
+          </section>
+
+          {/* Section Imagerie Médicale */}
+          <section className="medical-imaging">
+            <h2>Imagerie Médicale</h2>
+            {medicalRecord.medicalData.dicomStudies.length > 0 ? (
+              <div className="dicom-grid">
+                {medicalRecord.medicalData.dicomStudies.map((studyId, index) => (
+                  <div key={index} className="dicom-card">
+                    <h4>Examen #{index + 1}</h4>
+                    <p>ID: {studyId.substring(0, 8)}...</p>
+                    <button onClick={() => handleViewDicom(studyId)}>
+                      Voir l'examen
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p>Aucun examen d'imagerie disponible.</p>
+            )}
+          </section>
+
+          {/* Section Prescriptions */}
+          <section className="prescriptions">
+            <h2>Prescriptions Médicales</h2>
+            {medicalRecord.medicalData.prescriptions.length > 0 ? (
+              <div className="prescriptions-list">
+                {medicalRecord.medicalData.prescriptions.map((prescription, index) => (
+                  <div key={index} className="prescription-card">
+                    <h4>{prescription.medication}</h4>
+                    <p><strong>Dosage:</strong> {prescription.dosage}</p>
+                    <p><strong>Instructions:</strong> {prescription.instructions}</p>
+                    <p><strong>Prescrit par:</strong> {prescription.doctor_name}</p>
+                    <p><strong>Date:</strong> {formatDate(prescription.created_at)}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p>Aucune prescription disponible.</p>
+            )}
+          </section>
+
+          {/* Section Historique Médical */}
+          <section className="medical-history">
+            <h2>Historique Médical</h2>
+            {medicalRecord.medicalData.medicalHistory.length > 0 ? (
+              <div className="timeline">
+                {medicalRecord.medicalData.medicalHistory.map((record, index) => (
+                  <div key={index} className="timeline-item">
+                    <div className="timeline-date">{formatDate(record.diagnosis_date)}</div>
+                    <div className="timeline-content">
+                      <h4>{record.condition_name}</h4>
+                      <p><strong>Statut:</strong> {record.status}</p>
+                      {record.notes && <p><strong>Notes:</strong> {record.notes}</p>}
+                      {record.doctor_name && <p><strong>Médecin:</strong> {record.doctor_name}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p>Aucun historique médical enregistré.</p>
+            )}
+          </section>
+
+          {/* Section Rendez-vous */}
+          <section className="appointments">
+            <h2>Rendez-vous</h2>
+            {medicalRecord.medicalData.appointments.length > 0 ? (
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Médecin</th>
+                    <th>Statut</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {medicalRecord.medicalData.appointments.map((appointment, index) => (
+                    <tr key={index}>
+                      <td>{formatDateTime(appointment.appointment_date)}</td>
+                      <td>{appointment.doctor_name}</td>
+                      <td>{appointment.status || 'Planifié'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>Aucun rendez-vous à venir.</p>
+            )}
+          </section>
+        </>
       )}
-      <div className="card">
-        <h3>Mes rendez-vous</h3>
-        {appointments.length === 0 ? (
-          <p>Aucun rendez-vous planifié.</p>
-        ) : (
-          <ul>
-            {appointments.map((appt) => (
-              <li key={appt.id}>
-                Date : {new Date(appt.appointment_date).toLocaleString()}, Médecin ID : {appt.doctor_id}
-              </li>
-            ))}
-          </ul>
-        )}
-        <AppointmentForm patientId={user.id} />
-      </div>
-      <div className="card">
-        <h3>Mes prescriptions</h3>
-        {prescriptions.length === 0 ? (
-          <p>Aucune prescription disponible.</p>
-        ) : (
-          <ul>
-            {prescriptions.map((pres) => (
-              <li key={pres.id}>
-                Médicament : {pres.medication}, Dosage : {pres.dosage}, Instructions : {pres.instructions}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
     </div>
   );
-}
+};
 
 export default PatientDashboard;

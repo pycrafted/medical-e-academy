@@ -54,7 +54,6 @@ form.create-patient-form button:disabled {
   cursor: not-allowed;
 }
 
-/* Styles existants */
 form.change-password-form {
   display: flex;
   flex-direction: column;
@@ -103,7 +102,6 @@ form.change-password-form button:active {
   transform: translateY(0);
 }
 
-/* Nouveaux styles pour DicomUpload */
 form.dicom-upload-form {
   display: flex;
   flex-direction: column;
@@ -149,4 +147,59 @@ form.dicom-upload-form button:active {
 form.dicom-upload-form button:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
+}
+
+/* Nouveaux styles pour le dossier médical */
+.medical-folder {
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.medical-folder h3 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.folder-details p {
+  margin: 10px 0;
+  font-size: 1rem;
+  color: #555;
+}
+
+.folder-details p strong {
+  color: #333;
+  margin-right: 10px;
+}
+
+.folder-details h4 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+.prescription-list {
+  list-style: none;
+  padding: 0;
+}
+
+.prescription-item {
+  border: 1px solid #eee;
+  border-radius: 5px;
+  padding: 15px;
+  margin-bottom: 10px;
+  background-color: #fff;
+}
+
+.prescription-item p {
+  margin: 5px 0;
+}
+
+.error {
+  color: red;
+  margin-bottom: 10px;
 }

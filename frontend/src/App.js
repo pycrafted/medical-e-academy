@@ -10,6 +10,7 @@ import DoctorDashboard from './components/DoctorDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import AssistantDashboard from './components/AssistantDashboard';
 import './App.css';
+import ChangePasswordForm from './components/ChangePasswordForm';
 
 function Layout() {
   const location = useLocation();
@@ -29,6 +30,7 @@ function Layout() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<Login />} />
+          <Route path="/change-password" element={<ChangePasswordForm />} />
         </Routes>
       </div>
     </>
