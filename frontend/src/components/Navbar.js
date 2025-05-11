@@ -17,8 +17,10 @@ function Navbar() {
         <div className="nav-links">
           <Link to="/dashboard">Tableau de bord</Link>
           <Link to="/dicom">Bibliothèque DICOM</Link>
-          <Link to="/exercises">Exercices</Link>
-          {user?.role === 'teacher' && <Link to="/teacher">Gestion des exercices</Link>}
+          {user?.role === 'patient' && <Link to="/patient">Mon espace patient</Link>}
+          {user?.role === 'doctor' && <Link to="/doctor">Espace médecin</Link>}
+          {user?.role === 'admin' && <Link to="/admin">Administration</Link>}
+          {user?.role === 'assistant' && <Link to="/assistant">Espace assistant</Link>}
         </div>
         <button className="nav-logout" onClick={handleLogout}>
           Déconnexion

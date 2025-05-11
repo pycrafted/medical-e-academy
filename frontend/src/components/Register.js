@@ -6,7 +6,7 @@ function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('student');
+  const [role, setRole] = useState('patient');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -61,9 +61,11 @@ function Register() {
         <div>
           <label>Rôle :</label>
           <select value={role} onChange={(e) => setRole(e.target.value)}>
-            <option value="student">Étudiant</option>
-            <option value="teacher">Professeur</option>
+            <option value="patient">Patient</option>
+            <option value="doctor">Médecin</option>
+            <option value="assistant">Assistant</option>
             <option value="admin">Administrateur</option>
+            <option value="researcher">Chercheur</option>
           </select>
         </div>
         <button type="submit">S’inscrire</button>
